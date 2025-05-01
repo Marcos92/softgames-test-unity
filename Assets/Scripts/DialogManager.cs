@@ -20,6 +20,12 @@ public class DialogManager : MonoBehaviour
         skipButton.onClick.AddListener(ShowNextDialog);
     }
 
+    void OnDestroy()
+    {
+        DialogDataLoader.OnDataLoaded -= InitDialog;
+        skipButton.onClick.RemoveListener(ShowNextDialog);
+    }
+
     private void InitDialog(DialogData loadedData)
     {
         data = loadedData;
@@ -32,7 +38,6 @@ public class DialogManager : MonoBehaviour
     {
         string name = data.dialogue[currentIndex].name;
         string dialog = EmojiParser.Replace(data.dialogue[currentIndex].text);
-        Debug.Log(dialog);
 
         Avatar avatar = Array.Find(data.avatars, a => a.name == name);
         Sprite sprite = avatar?.sprite;

@@ -7,6 +7,7 @@ public class DialogDataLoader : MonoBehaviour
 {
     private DialogData data;
     private readonly string url = "https://private-624120-softgamesassignment.apiary-mock.com/v3/magicwords";
+    private bool isDestroyed = false;
 
     public static Action<DialogData> OnDataLoaded;
 
@@ -15,45 +16,75 @@ public class DialogDataLoader : MonoBehaviour
         StartCoroutine(LoadData());
     }
 
+    void OnDestroy()
+    {
+        isDestroyed = true;
+    }
+
     private IEnumerator LoadData()
     {
-        UnityWebRequest request = UnityWebRequest.Get(url);
-        yield return request.SendWebRequest();
+        int maxRetries = 3;
+        int attempts = 0;
+        bool success = false;
 
-        if (request.result != UnityWebRequest.Result.Success)
+        while (attempts < maxRetries && !success)
         {
-            Debug.LogError($"Error: {request.error}");
-            yield break;
+            UnityWebRequest request = UnityWebRequest.Get(url);
+            yield return request.SendWebRequest();
+
+            if (request.result == UnityWebRequest.Result.Success)
+            {
+                success = true;
+                string json = request.downloadHandler.text;
+                data = JsonUtility.FromJson<DialogData>(json);
+
+                if (data == null || data.avatars == null)
+                {
+                    Debug.LogError("Failed to parse DialogData or avatars array is missing.");
+                    yield break;
+                }
+
+                foreach (var avatar in data.avatars)
+                {
+                    if (string.IsNullOrEmpty(avatar.url))
+                    {
+                        Debug.LogWarning($"Avatar '{avatar.name}' has an empty or missing URL, skipping download.");
+                        continue;
+                    }
+                    yield return StartCoroutine(DownloadAvatar(avatar));
+                }
+
+                OnDataLoaded?.Invoke(data);
+            }
+            else
+            {
+                Debug.LogWarning($"Attempt {attempts++} failed: {request.error}");
+            }
         }
 
-        string json = request.downloadHandler.text;
-        data = JsonUtility.FromJson<DialogData>(json);
-
-        foreach (var avatar in data.avatars)
+        if (!success)
         {
-            yield return StartCoroutine(DownloadAvatar(avatar));
+            Debug.LogError("Failed to load data after multiple attempts.");
         }
-
-        OnDataLoaded?.Invoke(data);
     }
 
     private IEnumerator DownloadAvatar(Avatar avatar)
     {
-        UnityWebRequest request = UnityWebRequestTexture.GetTexture(avatar.url);
+        if (isDestroyed) yield break;
 
+        UnityWebRequest request = UnityWebRequestTexture.GetTexture(avatar.url);
         yield return request.SendWebRequest();
 
         if (request.result != UnityWebRequest.Result.Success)
         {
-            Debug.LogWarning($"Failed to load avatar for {avatar.name}: {request.error}");
+            Debug.LogWarning($"Failed to load avatar for '{avatar.name}': {request.error}");
         }
         else
         {
-            Texture2D tex = DownloadHandlerTexture.GetContent(request);
-            avatar.sprite = Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height), new Vector2(0.5f, 0.5f));
+            Texture2D texture = DownloadHandlerTexture.GetContent(request);
+            avatar.sprite = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2(0.5f, 0.5f));
         }
     }
-
 }
 
 [Serializable]

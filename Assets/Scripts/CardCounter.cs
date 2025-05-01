@@ -14,6 +14,12 @@ public class CardCounter : MonoBehaviour
         pile.OnCardRemoved += UpdateLabel;
     }
 
+    void OnDestroy()
+    {
+        pile.OnCardAdded -= UpdateLabel;
+        pile.OnCardRemoved -= UpdateLabel;
+    }
+
     private void UpdateLabel()
     {
         label.text = pile.CardCount.ToString();

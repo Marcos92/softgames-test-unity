@@ -39,8 +39,6 @@ public class DialogBox : MonoBehaviour
 
     private void UpdatePosition(string position)
     {
-        Debug.Log(position);
-
         if (position == "left")
         {
             nameRect.anchoredPosition = new Vector2(-250, 100);

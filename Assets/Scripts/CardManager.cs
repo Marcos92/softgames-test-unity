@@ -8,6 +8,8 @@ public class CardManager : MonoBehaviour
     [SerializeField] private CardPile endPile;
     [SerializeField] private GameObject finishLabel;
 
+    private int maxCardAmount = 144;
+
     void Awake()
     {
         SetupStartPile();
@@ -16,9 +18,14 @@ public class CardManager : MonoBehaviour
         endPile.OnCardAdded += CheckIfFinished;
     }
 
+    void OnDestroy()
+    {
+        endPile.OnCardAdded -= CheckIfFinished;
+    }
+
     private void SetupStartPile()
     {
-        for (int i = 0; i < 144; i++)
+        for (int i = 0; i < maxCardAmount; i++)
         {
             Card card = Instantiate(cardPrefab);
             startPile.AddCard(card);
@@ -29,7 +36,7 @@ public class CardManager : MonoBehaviour
 
     private IEnumerator MoveCards()
     {
-        yield return new WaitForSeconds(1.0f);
+        yield return new WaitForSeconds(0.5f);
 
         while (startPile.CardCount > 0)
         {
@@ -40,7 +47,7 @@ public class CardManager : MonoBehaviour
 
     private void CheckIfFinished()
     {
-        if (endPile.CardCount >= 144)
+        if (endPile.CardCount >= maxCardAmount)
         {
             finishLabel.SetActive(true);
         }
