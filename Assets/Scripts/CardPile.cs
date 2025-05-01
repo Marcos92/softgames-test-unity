@@ -22,14 +22,14 @@ public class CardPile : MonoBehaviour
     {
         cards.Add(card);
         card.transform.SetParent(transform, true);
-        OnCardAdded.Invoke();
+        OnCardAdded?.Invoke();
     }
 
     public void RemoveCard(Card card)
     {
         cards.Remove(card);
         card.transform.SetParent(transform.root);
-        OnCardRemoved.Invoke();
+        OnCardRemoved?.Invoke();
     }
 
     public void SetupCardPositions()
